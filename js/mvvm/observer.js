@@ -1,40 +1,48 @@
+/* 实现数据的劫持 */
 function Observer(data) {
+    // 保存data，注意this是Observer的实例
     this.data = data;
+    // 开始对data的监视
     this.walk(data);
 }
 
 Observer.prototype = {
     walk: function(data) {
+        // 保存observer对象
         var me = this;
+        // 遍历data中的所有属性
         Object.keys(data).forEach(function(key) {
-            me.convert(key, data[key]);
+           /* me.convert(key, data[key]);*/
+           // 对指定的属性实现响应式的数据绑定
+          me.defineReactive(me.data, key, data[key]);
         });
     },
-    convert: function(key, val) {
+    /*convert: function(key, val) {
         this.defineReactive(this.data, key, val);
-    },
-
+    },*/
     defineReactive: function(data, key, val) {
+        // 创建属性对应的dep对象  dependency
         var dep = new Dep();
+        // 通过间接的递归调用实现对data中所有层次属性的数据劫持
         var childObj = observe(val);
-
+        // 给data重新定义属性，添加set/get方法
         Object.defineProperty(data, key, {
             enumerable: true, // 可枚举
             configurable: false, // 不能再define
-            get: function() {
+            get: function() {  // 返回值，建议dep与watcher之间的关系
                 if (Dep.target) {
-                    dep.depend();
+                    dep.depend();   // 建立关系
                 }
                 return val;
             },
-            set: function(newVal) {
+            set: function(newVal) {  // 监视key属性的变化，更新界面
                 if (newVal === val) {
                     return;
                 }
                 val = newVal;
                 // 新的值是object的话，进行监听
                 childObj = observe(newVal);
-                // 通知订阅者
+                // 通知所有相关的订阅者（watcher）
                 dep.notify();
             }
         });
@@ -42,10 +50,11 @@ Observer.prototype = {
 };
 
 function observe(value, vm) {
+    //被观察的必须是一个对象
     if (!value || typeof value !== 'object') {
         return;
     }
-
+    // 创建对应的Observer对象
     return new Observer(value);
 };
 
@@ -58,10 +67,11 @@ function Dep() {
 }
 
 Dep.prototype = {
+    // 添加watcher到dep中，
     addSub: function(sub) {
         this.subs.push(sub);
     },
-
+  //建立dep到watcher方向的关系
     depend: function() {
         Dep.target.addDep(this);
     },
@@ -74,6 +84,7 @@ Dep.prototype = {
     },
 
     notify: function() {
+        // 遍历所有的watcher，通知watcher更新
         this.subs.forEach(function(sub) {
             sub.update();
         });

@@ -11,9 +11,9 @@ function MVVM(options) {
       // 对指定的属性实现代理
       me._proxy(key);
     });
-
+    // 对data中所有层次的属性通过数据劫持技术实现数据绑定，内部会创建dep
     observe(data, this);
-
+    // 创建一个编译对象compile（用于解析模板），内部会创建watcher
     this.$compile = new Compile(options.el || document.body, this)
 }
 

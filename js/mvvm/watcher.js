@@ -1,9 +1,9 @@
 function Watcher(vm, exp, cb) {
-    this.cb = cb;
-    this.vm = vm;
-    this.exp = exp;
-    this.depIds = {};
-    this.value = this.get();
+    this.cb = cb;  // 更新界面的回调函数
+    this.vm = vm;  // 保存vm
+    this.exp = exp;  // 表达式
+    this.depIds = {};  // 包含所有相关的dep的容器对象
+    this.value = this.get();  // 得到表达式的初始值保存
 }
 
 Watcher.prototype = {
@@ -11,15 +11,16 @@ Watcher.prototype = {
         this.run();
     },
     run: function() {
-        var value = this.get();
-        var oldVal = this.value;
+        var value = this.get();  // 得到最新的值
+        var oldVal = this.value;  // 得到旧的值
         if (value !== oldVal) {
             this.value = value;
+            // 调用回调函数更新界面
             this.cb.call(this.vm, value, oldVal);
         }
     },
     addDep: function(dep) {
-        // 1. 每次调用run()的时候会触发相应属性的getter
+  /*      // 1. 每次调用run()的时候会触发相应属性的getter
         // getter里面会触发dep.depend()，继而触发这里的addDep
         // 2. 假如相应属性的dep.id已经在当前watcher的depIds里，说明不是一个新的属性，仅仅是改变了其值而已
         // 则不需要将当前watcher添加到该属性的dep里
@@ -33,18 +34,26 @@ Watcher.prototype = {
         // 这一步是在 this.get() --> this.getVMVal() 里面完成，forEach时会从父级开始取值，间接调用了它的getter
         // 触发了addDep(), 在整个forEach过程，当前wacher都会加入到每个父级过程属性的dep
         // 例如：当前watcher的是'child.child.name', 那么child, child.child, child.child.name这三个属性的dep都会加入当前watcher
-        if (!this.depIds.hasOwnProperty(dep.id)) {
-            dep.addSub(this);
-            this.depIds[dep.id] = dep;
+*/
+  // 判断dep与watcher的关系是否已经建立
+  if (!this.depIds.hasOwnProperty(dep.id)) {
+            // 将watcher添加到dep，即建立了从dep到watcher的关系
+            dep.addSub(this);  // 用于更新
+          // 将dep添加到watcher ，即建立了从watcher到dep的关系
+            this.depIds[dep.id] = dep;  // 用于防止重复建立关系
         }
     },
+  //也得到表达式对应的值，但是内部回去建立dep与watcher的关系
     get: function() {
+        //给dep指定当前的watcher
         Dep.target = this;
+        // 获取表达式的值，内部会调用observer中的get()建立dep与watcher的关系
         var value = this.getVMVal();
+        // 去除dep中指定的当前的watcher
         Dep.target = null;
         return value;
     },
-
+  //得到表达式对应的值
     getVMVal: function() {
         var exp = this.exp.split('.');
         var val = this.vm._data;
